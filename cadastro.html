@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Criar conta — Açougue Prime</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥩</text></svg>" />
+  <link rel="stylesheet" href="css/estilo.css" />
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <main class="centro-formulario">
+    <form class="cartao-formulario" id="formulario-cadastro" novalidate>
+      <div class="minilogo">🥩</div>
+      <h1>Criar minha conta</h1>
+      <p>Cadastre-se para acompanhar pedidos e receber as novidades do açougue.</p>
+
+      <div class="aviso" id="aviso-cadastro" hidden></div>
+
+      <div class="campo">
+        <label for="campo-nome">Nome completo</label>
+        <input id="campo-nome" name="nome" type="text" placeholder="Ex.: Maria da Silva" required autocomplete="name" />
+      </div>
+
+      <div class="campo">
+        <label for="campo-email">E-mail</label>
+        <input id="campo-email" name="email" type="email" placeholder="voce@email.com" required autocomplete="email" />
+      </div>
+
+      <div class="campo">
+        <label for="campo-senha">Senha (mínimo 6 caracteres)</label>
+        <input id="campo-senha" name="senha" type="password" placeholder="••••••" required minlength="6" autocomplete="new-password" />
+      </div>
+
+      <button class="botao completo" type="submit" id="botao-enviar">Cadastrar 🥩</button>
+
+      <p class="rodape-formulario">
+        Já tem conta? <a href="login.html">Entrar agora</a>
+      </p>
+    </form>
+  </main>
+
+  <footer class="rodape">
+    <div class="rodape-interno">
+      <small>Açougue Prime 🥩 — API: Express + SQLite + JWT · Site: HTML + CSS + JavaScript</small>
+      <small><a href="produtos.html">Catálogo</a> · <a href="login.html">Entrar</a></small>
+    </div>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    desenharNavbar('cadastro');
+
+    const formulario = document.getElementById('formulario-cadastro');
+    const aviso = document.getElementById('aviso-cadastro');
+    const botaoEnviar = document.getElementById('botao-enviar');
+
+    formulario.addEventListener('submit', async (evento) => {
+      evento.preventDefault();
+      aviso.hidden = true;
+
+      const nome = document.getElementById('campo-nome').value.trim();
+      const email = document.getElementById('campo-email').value.trim();
+      const senha = document.getElementById('campo-senha').value;
+
+      botaoEnviar.disabled = true;
+      botaoEnviar.textContent = 'Cadastrando…';
+
+      try {
+        await clienteCadastrar({ nome, email, senha });
+
+        aviso.className = 'aviso ok';
+        aviso.textContent = 'Conta criada com sucesso! Vamos para o login… 🎉';
+        aviso.hidden = false;
+
+        formulario.reset();
+        setTimeout(() => {
+          window.location.href = 'login.html?email=' + encodeURIComponent(email);
+        }, 1100);
+      } catch (erro) {
+        aviso.className = 'aviso erro';
+        aviso.textContent = erro.message;
+        aviso.hidden = false;
+        botaoEnviar.disabled = false;
+        botaoEnviar.textContent = 'Cadastrar 🥩';
+      }
+    });
+  </script>
+</body>
+</html>

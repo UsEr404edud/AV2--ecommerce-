@@ -1,0 +1,22 @@
+{
+  "name": "acougue-prime-api",
+  "version": "1.0.0",
+  "description": "API do e-commerce de carnes Açougue Prime (Express + SQLite + JWT)",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "migrate": "node migrate.js",
+    "migrate:fresh": "node migrate.js --fresh"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.3.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

@@ -1,0 +1,15 @@
+# Arquivo de exemplo das variáveis de ambiente.
+# Copie este arquivo e renomeie para ".env" (sem o ".txt" e sem aspas):
+#     Linux/Mac:  cp dotenv-example.txt .env
+#     Windows:    copy dotenv-example.txt .env
+#
+# Descrição de cada variável:
+# PORTA       -> porta em que a API responde (padrão: 3000)
+# JWT_SENHA   -> senha usada para assinar/validar os tokens JWT (troque por algo seu!)
+# JWT_EXPIRA  -> tempo de vida do token (ex.: 4h, 1h, 30m, 7d)
+# DB_ARQUIVO  -> caminho do arquivo do banco SQLite, relativo à pasta do projeto
+
+PORTA=3000
+JWT_SENHA=sua-senha-secreta-do-jwt-troque-essa-senha
+JWT_EXPIRA=4h
+DB_ARQUIVO=./banco/dados.db

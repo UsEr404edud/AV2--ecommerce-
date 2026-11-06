@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minha sacola — Açougue Prime</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥩</text></svg>" />
+  <link rel="stylesheet" href="css/estilo.css" />
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <main>
+    <h1 style="margin-bottom:16px">🛒 Minha sacola</h1>
+
+    <div id="conteudo-sacola"></div>
+
+    <div class="resumo-carrinho" id="resumo-sacola" hidden>
+      <div class="linha-total">Total da sacola: <b id="valor-total">R$ 0,00</b></div>
+      <div style="display:flex; gap:10px; align-items:center">
+        <a class="botao escuro ao-entrar" href="produtos.html">Continuar escolhendo</a>
+        <button class="botao" type="button" id="botao-finalizar">Finalizar pedido 🥩</button>
+      </div>
+    </div>
+
+    <p class="aviso" id="aviso-sacola" hidden style="margin-top:18px"></p>
+  </main>
+
+  <footer class="rodape">
+    <div class="rodape-interno">
+      <small>Açougue Prime 🥩 — API: Express + SQLite + JWT · Site: HTML + CSS + JavaScript</small>
+      <small><a href="produtos.html">Catálogo</a> · <a href="login.html">Entrar</a></small>
+    </div>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    desenharNavbar('carrinho');
+
+    const conteudo = document.getElementById('conteudo-sacola');
+    const resumo = document.getElementById('resumo-sacola');
+    const elementoTotal = document.getElementById('valor-total');
+    const aviso = document.getElementById('aviso-sacola');
+
+    function desenharSacola() {
+      const itens = carrinhoItens();
+
+      if (itens.length === 0) {
+        resumo.hidden = true;
+        conteudo.innerHTML = `
+          <div class="vazio-carrinho">
+            <div class="emoji">🛒</div>
+            <h2>Sua sacola está vazia</h2>
+            <p>Corre para o catálogo e escolha seus cortes preferidos.</p>
+            <a class="botao" href="produtos.html">Ver produtos</a>
+          </div>
+        `;
+        return;
+      }
+
+      resumo.hidden = false;
+      elementoTotal.textContent = formatarPreco(carrinhoTotal());
+
+      const linhas = itens
+        .map(
+          (item) => `
+          <tr>
+            <td class="emoji-item">${escaparHtml(item.emoji)}</td>
+            <td class="item-nome">
+              <b>${escaparHtml(item.nome)}</b>
+              <small>${formatarPreco(item.preco)} / kg</small>
+            </td>
+            <td>
+              <div class="controle-qtd">
+                <button type="button" data-acao="menos" data-id="${item.id}">−</button>
+                <input type="number" min="1" max="99" value="${item.qtd}" data-qtd data-id="${item.id}" />
+                <button type="button" data-acao="mais" data-id="${item.id}">+</button>
+              </div>
+            </td>
+            <td><b>${formatarPreco(item.preco * item.qtd)}</b></td>
+            <td><button type="button" class="link-remover" data-acao="remover" data-id="${item.id}">Remover</button></td>
+          </tr>
+        `,
+        )
+        .join('');
+
+      conteudo.innerHTML = `
+        <table class="tabela-carrinho">
+          <thead>
+            <tr>
+              <th></th><th>Produto</th><th>Quantidade</th><th>Subtotal</th><th></th>
+            </tr>
+          </thead>
+          <tbody>${linhas}</tbody>
+        </table>
+      `;
+
+      conteudo.querySelectorAll('[data-acao]').forEach((botao) => {
+        botao.addEventListener('click', () => {
+          const id = Number(botao.dataset.id);
+          const acao = botao.dataset.acao;
+          const item = carrinhoItens().find((i) => i.id === id);
+
+          if (acao === 'remover') {
+            carrinhoRemover(id);
+          } else if (acao === 'mais' && item) {
+            carrinhoAtualizarQuantidade(id, item.qtd + 1);
+          } else if (acao === 'menos' && item) {
+            if (item.qtd <= 1) carrinhoRemover(id);
+            else carrinhoAtualizarQuantidade(id, item.qtd - 1);
+          }
+          desenharSacola();
+        });
+      });
+
+      conteudo.querySelectorAll('[data-qtd]').forEach((campo) => {
+        campo.addEventListener('change', () => {
+          carrinhoAtualizarQuantidade(Number(campo.dataset.id), campo.value);
+          desenharSacola();
+        });
+      });
+    }
+
+    // ----- finalização (simulada: exige login) -----
+    document.getElementById('botao-finalizar').addEventListener('click', () => {
+      aviso.hidden = true;
+
+      if (!usuarioLogado()) {
+        aviso.className = 'aviso erro';
+        aviso.textContent = 'Faça login para finalizar o pedido. Redirecionando…';
+        aviso.hidden = false;
+        setTimeout(() => (window.location.href = 'login.html'), 1200);
+        return;
+      }
+
+      carrinhoLimpar();
+      aviso.className = 'aviso ok';
+      aviso.textContent = `Pedido confirmado, ${nomeUsuario()}! 🎉 Em minutos sua carne chega fresquinha. (pedido fictício do projeto)`;
+      aviso.hidden = false;
+      desenharSacola();
+    });
+
+    desenharSacola();
+  </script>
+</body>
+</html>

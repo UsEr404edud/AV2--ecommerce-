@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Produtos — Açougue Prime</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥩</text></svg>" />
+  <link rel="stylesheet" href="css/estilo.css" />
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <main>
+    <h1 style="margin-bottom:16px">🛒 Catálogo do açougue</h1>
+
+    <!-- -------- Painel de filtros -------- -->
+    <form class="painel-filtros" id="painel-filtros">
+      <div class="campo-filtro">
+        <label for="filtro-nome">Buscar por nome</label>
+        <input id="filtro-nome" type="text" placeholder="Ex.: picanha, costela, frango…" />
+      </div>
+
+      <div class="campo-filtro">
+        <label for="filtro-categoria">Categoria</label>
+        <select id="filtro-categoria">
+          <option value="">Todas as categorias</option>
+        </select>
+      </div>
+
+      <div class="campo-filtro">
+        <label for="filtro-ordenar">Ordenar por preço</label>
+        <select id="filtro-ordenar">
+          <option value="">Sem ordenação</option>
+          <option value="menor_preco">Menor preço primeiro</option>
+          <option value="maior_preco">Maior preço primeiro</option>
+        </select>
+      </div>
+
+      <div class="campo-filtro">
+        <label for="filtro-preco-min">Preço mínimo</label>
+        <input id="filtro-preco-min" type="number" min="0" step="1" placeholder="0" />
+      </div>
+
+      <div class="campo-filtro">
+        <label for="filtro-preco-max">Preço máximo</label>
+        <input id="filtro-preco-max" type="number" min="0" step="1" placeholder="100" />
+      </div>
+
+      <div class="painel-linha">
+        <button class="botao" type="submit">🔍 Buscar</button>
+        <button class="botao escuro" type="button" id="botao-limpar" title="Limpar filtros">✕</button>
+      </div>
+    </form>
+
+    <p class="resultado-info">
+      <span id="resumo-produtos">Carregando produtos…</span>
+      <span>10 produtos por página</span>
+    </p>
+
+    <!-- -------- Grade de produtos -------- -->
+    <div class="grade-produtos" id="grade-produtos"></div>
+
+    <!-- -------- Paginação -------- -->
+    <nav class="paginacao" id="paginacao" aria-label="Paginação"></nav>
+  </main>
+
+  <footer class="rodape">
+    <div class="rodape-interno">
+      <small>Açougue Prime 🥩 — API: Express + SQLite + JWT · Site: HTML + CSS + JavaScript</small>
+      <small><a href="index.html">Início</a> · <a href="carrinho.html">Sacola</a> · <a href="login.html">Entrar</a></small>
+    </div>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script src="js/cards.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    desenharNavbar('produtos');
+
+    // ----- referências dos filtros -----
+    const formulario = document.getElementById('painel-filtros');
+    const campoNome = document.getElementById('filtro-nome');
+    const campoCategoria = document.getElementById('filtro-categoria');
+    const campoOrdenar = document.getElementById('filtro-ordenar');
+    const campoPrecoMin = document.getElementById('filtro-preco-min');
+    const campoPrecoMax = document.getElementById('filtro-preco-max');
+    const botaoLimpar = document.getElementById('botao-limpar');
+
+    const resumo = document.getElementById('resumo-produtos');
+    const grade = document.getElementById('grade-produtos');
+    const paginacao = document.getElementById('paginacao');
+
+    let paginaAtual = 1;
+
+    const nomesCategorias = {
+      bovina: 'Bovino 🥩',
+      suina: 'Suíno 🥓',
+      ave: 'Aves 🍗',
+      ovino: 'Ovino 🐑',
+      embutido: 'Embutidos 🌭',
+    };
+
+    // ----- popular o select de categorias a partir da API -----
+    async function carregarCategorias() {
+      try {
+        const resposta = await buscarCategorias();
+        resposta.categorias.forEach((categoria) => {
+          const opcao = document.createElement('option');
+          opcao.value = categoria;
+          opcao.textContent = nomesCategorias[categoria] || categoria;
+          campoCategoria.appendChild(opcao);
+        });
+      } catch (_) {
+        /* sem categorias, segue a vida */
+      }
+    }
+
+    // ----- leitura de filtros da URL (permite links como ?categoria=ave) -----
+    function lerFiltrosDaUrl() {
+      const url = new URLSearchParams(window.location.search);
+      if (url.get('nome')) campoNome.value = url.get('nome');
+      if (url.get('categoria')) campoCategoria.value = url.get('categoria');
+      if (url.get('ordenar')) campoOrdenar.value = url.get('ordenar');
+      if (url.get('preco_min')) campoPrecoMin.value = Number(url.get('preco_min')) || '';
+      if (url.get('preco_max')) campoPrecoMax.value = Number(url.get('preco_max')) || '';
+    }
+
+    // ----- consulta a API com os filtros atuais -----
+    async function buscarPagina(pagina) {
+      paginaAtual = pagina || 1;
+
+      grade.innerHTML = '';
+      mostrarEstadoNosCards(grade, '🥩', 'Buscando carnes fresquinhas na chamada…');
+
+      const filtros = {
+        nome: campoNome.value.trim(),
+        categoria: campoCategoria.value,
+        ordenar: campoOrdenar.value,
+        preco_min: campoPrecoMin.value,
+        preco_max: campoPrecoMax.value,
+        pagina: String(paginaAtual),
+      };
+
+      try {
+        const resposta = await buscarProdutos(filtros);
+
+        // guarda os filtros na URL (sem recarregar a página)
+        const consultaFiltros = new URLSearchParams(filtros).toString();
+        history.replaceState(null, '', window.location.pathname + (consultaFiltros ? '?' + consultaFiltros : ''));
+
+        resumo.innerHTML = `<b>${resposta.total}</b> produto(s) encontrado(s) · página <b>${resposta.pagina}</b> de <b>${resposta.totalPaginas}</b>`;
+
+        grade.innerHTML = '';
+        if (resposta.produtos.length === 0) {
+          mostrarEstadoNosCards(grade, '🍖', 'Nenhuma carne encontrada com esses filtros, tente outro combo!');
+        } else {
+          resposta.produtos.forEach((produto) => grade.appendChild(criarCardProduto(produto)));
+        }
+
+        desenharPaginacao(resposta);
+      } catch (erro) {
+        resumo.textContent = 'Erro ao buscar produtos';
+        mostrarEstadoNosCards(grade, '🚨', erro.message);
+        paginacao.innerHTML = '';
+      }
+    }
+
+    // ----- paginação: pagina=1 → 1º a 10º; pagina=2 → 11º a 20º … -----
+    function desenharPaginacao(resposta) {
+      paginacao.innerHTML = '';
+
+      if (resposta.totalPaginas <= 1) {
+        paginacao.innerHTML = '<span class="rotulo">Página única 🥩</span>';
+        return;
+      }
+
+      const botaoAnterior = document.createElement('button');
+      botaoAnterior.textContent = '←';
+      botaoAnterior.disabled = resposta.pagina <= 1;
+      botaoAnterior.addEventListener('click', () => buscarPagina(resposta.pagina - 1));
+      paginacao.appendChild(botaoAnterior);
+
+      for (let numero = 1; numero <= resposta.totalPaginas; numero++) {
+        const botao = document.createElement('button');
+        botao.textContent = String(numero);
+        if (numero === resposta.pagina) botao.className = 'ativo';
+        botao.addEventListener('click', () => buscarPagina(numero));
+        paginacao.appendChild(botao);
+      }
+
+      const botaoProximo = document.createElement('button');
+      botaoProximo.textContent = '→';
+      botaoProximo.disabled = resposta.pagina >= resposta.totalPaginas;
+      botaoProximo.addEventListener('click', () => buscarPagina(resposta.pagina + 1));
+      paginacao.appendChild(botaoProximo);
+    }
+
+    // ----- eventos -----
+    formulario.addEventListener('submit', (evento) => {
+      evento.preventDefault();
+      buscarPagina(1); // nova busca sempre recomeça na página 1
+    });
+
+    // aplicar automaticamente quando muda select (categoria / ordenação)
+    campoCategoria.addEventListener('change', () => buscarPagina(1));
+    campoOrdenar.addEventListener('change', () => buscarPagina(1));
+
+    botaoLimpar.addEventListener('click', () => {
+      formulario.reset();
+      window.location.href = 'produtos.html';
+    });
+
+    // ----- arranque -----
+    carregarCategorias().then(() => {
+      lerFiltrosDaUrl();
+      buscarPagina(Number(new URLSearchParams(window.location.search).get('pagina')) || 1);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Entrar — Açougue Prime</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥩</text></svg>" />
+  <link rel="stylesheet" href="css/estilo.css" />
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <main class="centro-formulario">
+    <form class="cartao-formulario" id="formulario-login" novalidate>
+      <div class="minilogo">🔑</div>
+      <h1>Entrar no açougue</h1>
+      <p>Entre com seu e-mail e senha para concluir compras.</p>
+
+      <div class="aviso" id="aviso-login" hidden></div>
+
+      <div class="campo">
+        <label for="campo-email">E-mail</label>
+        <input id="campo-email" name="email" type="email" placeholder="voce@email.com" required autocomplete="email" />
+      </div>
+
+      <div class="campo">
+        <label for="campo-senha">Senha</label>
+        <input id="campo-senha" name="senha" type="password" placeholder="••••••" required autocomplete="current-password" />
+      </div>
+
+      <button class="botao completo" type="submit" id="botao-enviar">Entrar 🥩</button>
+
+      <p class="rodape-formulario">
+        Ainda não tem conta? <a href="cadastro.html">Cadastre-se agora</a>
+      </p>
+    </form>
+  </main>
+
+  <footer class="rodape">
+    <div class="rodape-interno">
+      <small>Açougue Prime 🥩 — API: Express + SQLite + JWT · Site: HTML + CSS + JavaScript</small>
+      <small><a href="produtos.html">Catálogo</a> · <a href="cadastro.html">Criar conta</a></small>
+    </div>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    desenharNavbar('login');
+
+    const formulario = document.getElementById('formulario-login');
+    const aviso = document.getElementById('aviso-login');
+    const botaoEnviar = document.getElementById('botao-enviar');
+    const campoEmail = document.getElementById('campo-email');
+
+    // Se veio do cadastro (?email=...), já preenche o e-mail
+    const emailDaUrl = new URLSearchParams(window.location.search).get('email');
+    if (emailDaUrl) campoEmail.value = emailDaUrl;
+
+    formulario.addEventListener('submit', async (evento) => {
+      evento.preventDefault();
+      aviso.hidden = true;
+
+      const email = campoEmail.value.trim();
+      const senha = document.getElementById('campo-senha').value;
+
+      botaoEnviar.disabled = true;
+      botaoEnviar.textContent = 'Entrando…';
+
+      try {
+        const resposta = await fazerLogin(email, senha);
+
+        // SALVA no LocalStorage o NOME e o TOKEN do cliente logado
+        iniciarSessao(resposta.token, resposta.cliente.nome);
+        // (só para conferência: localStorage.getItem('token') e
+        //  localStorage.getItem('usuarioNome') agora existem no navegador)
+
+        aviso.className = 'aviso ok';
+        aviso.textContent = 'Login realizado! Bem-vindo(a), ' + resposta.cliente.nome + ' 🥩';
+        aviso.hidden = false;
+
+        setTimeout(() => (window.location.href = 'produtos.html'), 900);
+      } catch (erro) {
+        aviso.className = 'aviso erro';
+        aviso.textContent = erro.message;
+        aviso.hidden = false;
+        botaoEnviar.disabled = false;
+        botaoEnviar.textContent = 'Entrar 🥩';
+      }
+    });
+  </script>
+</body>
+</html>

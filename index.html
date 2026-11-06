@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Açougue Prime — carnes premium entregues na sua casa</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥩</text></svg>" />
+  <link rel="stylesheet" href="css/estilo.css" />
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <main>
+    <!-- ============ Destaque ============ -->
+    <section class="destaque">
+      <div>
+        <h1>A <em>carne certa</em> para o seu churrasco chegar fresquinha em casa</h1>
+        <p>
+          Cortes bovinos, suínos, aves, ovinos e embutidos selecionados todos os dias,
+          embalados no vácuo e entregues em até 2 horas.
+        </p>
+        <div class="destaque-acoes">
+          <a class="botao" href="produtos.html">🛒 Ver o açougue</a>
+          <a class="botao fantasma" href="cadastro.html" style="color:#fdf3e4">Criar minha conta</a>
+        </div>
+      </div>
+      <div class="carnes-flutuando" aria-hidden="true">
+        <span>🥩</span><span>🍖</span><span>🍗</span><span>🥓</span>
+      </div>
+    </section>
+
+    <!-- ============ Benefícios ============ -->
+    <section class="beneficios">
+      <div class="beneficio">
+        <span>🔪</span>
+        <div>
+          <h3>Cortes frescos do dia</h3>
+          <p>Peças chegam do frigorífico pela manhã e são embaladas na hora.</p>
+        </div>
+      </div>
+      <div class="beneficio">
+        <span>🚚</span>
+        <div>
+          <h3>Entrega em até 2h</h3>
+          <p>Pede agora, grava, e recebe quentinho. Pago ao conferir a sacola.</p>
+        </div>
+      </div>
+      <div class="beneficio">
+        <span>🧊</span>
+        <div>
+          <h3>Cadeia de frio garantida</h3>
+          <p>Embalagem a vácuo com gelo, do açougue até a sua cozinha.</p>
+        </div>
+      </div>
+      <div class="beneficio">
+        <span>💳</span>
+        <div>
+          <h3>Pague como preferir</h3>
+          <p>Pix, cartão ou dinheiro na entrega. Da sua forma, sem enrolação.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ Cortes nobres (maiores preços) ============ -->
+    <section class="secao">
+      <div class="secao-cabeca">
+        <h2>⭐ Cortes nobres da semana</h2>
+        <a href="produtos.html?ordenar=maior_preco">Ver todos →</a>
+      </div>
+      <div class="grade-produtos" id="destaque-nobre"></div>
+    </section>
+
+    <!-- ============ Preço amigável (menores preços) ============ -->
+    <section class="secao">
+      <div class="secao-cabeca">
+        <h2>💰 Melhores preços da cidade</h2>
+        <a href="produtos.html?ordenar=menor_preco">Ver todos →</a>
+      </div>
+      <div class="grade-produtos" id="destaque-barato"></div>
+    </section>
+  </main>
+
+  <footer class="rodape">
+    <div class="rodape-interno">
+      <small>Açougue Prime 🥩 — API: Express + SQLite + JWT · Site: HTML + CSS + JavaScript</small>
+      <small><a href="produtos.html">Catálogo</a> · <a href="login.html">Entrar</a> · <a href="cadastro.html">Criar conta</a></small>
+    </div>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script src="js/cards.js"></script>
+  <script src="js/navbar.js"></script>
+  <script>
+    desenharNavbar('inicio');
+
+    async function carregarDestaque(id, filtros) {
+      const container = document.getElementById(id);
+      try {
+        const resposta = await buscarProdutos(filtros);
+        container.innerHTML = '';
+        resposta.produtos.slice(0, 4).forEach((produto) => {
+          container.appendChild(criarCardProduto(produto));
+        });
+      } catch (erro) {
+        mostrarEstadoNosCards(container, '🚨', erro.message);
+      }
+    }
+
+    carregarDestaque('destaque-nobre', { ordenar: 'maior_preco', pagina: 1 });
+    carregarDestaque('destaque-barato', { ordenar: 'menor_preco', pagina: 1 });
+  </script>
+</body>
+</html>
